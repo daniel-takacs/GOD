@@ -117,6 +117,10 @@ io.on('connection', socket => {
 
         const user = await UserModel.findOne({ id: msgObj.creatorId });
 
+        if (!user) {
+            console.error(`cannot find user ${msgObj.creatorId}`)
+        }
+
         const inMessage = {
             text: msgObj.text,
             parentId: msgObj.parentId,
