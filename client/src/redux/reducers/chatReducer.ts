@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import type { RootState } from "../store";
 import axios from "axios";
+import type { RootState } from "../store";
 
 export interface Message {
   id: string;
@@ -15,23 +15,28 @@ interface Chat {
   messages: Array<Message>;
 }
 
-function getDiscussion(qid: string){
-  return new Promise((resolve, reject)=>{
-    axios.post('/discussion/get-discussion', {qid})
-        .then(({ data }) => {
-          if(Array.isArray(data.result)) resolve(data.result);
-          else reject()
-        }).catch(e => {
-      console.error(e)
-      reject();
-    })
-  })
+function getDiscussion(qid: string) {
+  return new Promise((resolve, reject) => {
+    axios
+      .post("/discussion/get-discussion", { qid })
+      .then(({ data }) => {
+        if (Array.isArray(data.result)) {
+          resolve(data.result);
+        } else {
+          reject(new Error("On getting discussion, it didnt return an array"));
+        }
+      })
+      .catch((e) => {
+        console.error(e);
+        reject(e);
+      });
+  });
 }
 
 export const getDiscussionThunk = createAsyncThunk(
-    'discussion/getDiscussion',
-    async (qid: string) => await getDiscussion(qid)
-)
+  "discussion/getDiscussion",
+  async (qid: string) => await getDiscussion(qid),
+);
 
 const initialState = {
   messages: [],
@@ -46,17 +51,18 @@ export const chatSlice = createSlice({
       state.messages = [...state.messages, action.payload];
     },
   },
-  extraReducers: builder => {
-    builder
-        .addCase(getDiscussionThunk.fulfilled, (state: any, action: any) => {
-          state.messages = action.payload
-        })
-  }
+  extraReducers: (builder) => {
+    builder.addCase(getDiscussionThunk.fulfilled, (state: any, action: any) => {
+      state.messages = action.payload;
+    });
+  },
 });
 
 export const { addMessage } = chatSlice.actions;
 
-//selectors
+// selectors
 export const allMessages = (state: RootState) => state.chats.messages;
 
-export default chatSlice.reducer;
+const chatReducer = chatSlice.reducer;
+
+export default chatReducer;

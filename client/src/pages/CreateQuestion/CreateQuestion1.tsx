@@ -1,55 +1,24 @@
-import { FC, useState } from 'react';
-import { Link } from 'react-router-dom';
-
-//redux
-import { useAppSelector, useAppDispatch } from '../../redux/hooks';
-import {
-  selectTitle,
-  selectEnableMoveTo2,
-  setTitle,
-  setEnableMoveTo2
-} from '../../redux/reducers/createQuestionReducer';
-
-//matrial UI
-import Button from '@mui/material/Button';
+import React, { FC, useState } from 'react';
+// matrial UI
 import TextField from '@mui/material/TextField';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import { NextButton } from "components/Wizard";
+import {
+  newQuestionSelector,
+  setTitle,
+  setEnableMoveTo2,
+} from 'redux/reducers/createQuestionReducer';
+import { useAppSelector, useAppDispatch } from 'redux/hooks';
+import CreateQuestionProps from './CreateQuestionProps';
 
-import { createQuestionProps } from './CreateQuestion';
-
-
-const CreateQuestion1: FC<createQuestionProps> = (props: createQuestionProps) => {
-
-  const title = useAppSelector(selectTitle);
-  const enableNext = useAppSelector(selectEnableMoveTo2);
+const CreateQuestion1: FC<CreateQuestionProps> = (props: CreateQuestionProps) => {
+  const { title, enableMoveTo2: enableNext } = useAppSelector(newQuestionSelector);
   const dispatch = useAppDispatch();
   const { path } = props;
 
-  //state
+  // state
   const maxChar = 140;
   const [charCount, setCharCount] = useState(title.length);
   const [charClass, setCharClass] = useState('charCount--min');
-  
-
-  return (
-    <div>
-      <div className="wrapper">
-        <h1>What is the Issue / problem / question you would like to present?</h1>
-        <p>This will be the title, which will appear at the top. Keep the description short and to the point.</p>
-        < TextField id="standard-basic" defaultValue={title} label="Question Title" multiline rows={3} variant="outlined" fullWidth type="text" name='username' onChange={handleChange} />
-        <div className={`charCount ${charClass}`}>({charCount}/{maxChar})</div>
-      </div>
-      <div className="bottomNavButtons">
-        {enableNext ?
-          <Link to={`${path}/2`}>
-            <Button variant="contained" endIcon={<ArrowForwardIosIcon />} >Next</Button>
-          </Link>
-          : <Button variant="contained" endIcon={<ArrowForwardIosIcon />} disabled={true}>Next</Button>
-        }
-      </div>
-    </div>
-  );
-
 
   function handleChange(ev: any) {
     const charCountVar = ev.target.value.length;
@@ -58,17 +27,28 @@ const CreateQuestion1: FC<createQuestionProps> = (props: createQuestionProps) =>
     if (charCountVar > 6 && charCountVar < maxChar) {
       setCharClass('charCount--ok');
       dispatch(setTitle(ev.target.value));
-      dispatch(setEnableMoveTo2(true))
+      dispatch(setEnableMoveTo2(true));
     } else if (charCountVar <= 6) {
       setCharClass('charCount--min');
-      dispatch(setEnableMoveTo2(false))
+      dispatch(setEnableMoveTo2(false));
     } else {
-      // setCharClass('charCount--max');
       ev.target.value = ev.target.value.slice(0, -1);
     }
-
-
   }
-}
+
+  return (
+    <div>
+      <div className="wrapper">
+        <h1>What is the Issue / problem / question you would like to present?</h1>
+        <p>This will be the title, which will appear at the top. Keep the description short and to the point.</p>
+        <TextField id="standard-basic" defaultValue={title} label="Question Title" multiline rows={3} variant="outlined" fullWidth type="text" name="username" onChange={handleChange} />
+        <div className={`charCount ${charClass}`}>({charCount}/{maxChar})</div>
+      </div>
+      <div className="bottomNavButtons">
+        <NextButton linkTo={enableNext ? `${path}/2` : ''} disabled={!enableNext} />
+      </div>
+    </div>
+  );
+};
 
 export default CreateQuestion1;

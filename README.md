@@ -10,9 +10,9 @@ The current version is 4. The previous version code can be found here ([Delib-3]
 
 Fork the repository, and then clone the repository to your local machine
 
-then in root run ```npm i```
+In ```/server``` run ```npm i```
 
-in ```/client``` run  ```npm i```
+In ```/server``` add ```.env``` file.
 
 In the server directory add ```.env``` file.
 
@@ -20,16 +20,14 @@ use the following configuration:
 ```
 GOOGLE_CLIENT_ID=<>
 GOOGLE_CLIENT_SECRET=<>
-
 PASSPORT_SECRET=<>
-
 JWT_SECRET=<>
-
 CLOUDINARY_PAAS=<>
-
 ```
 
-In the client src directory add a file ```env.ts``` and write the cloudanry key you got from cloudinary.com:
+In ```/client``` run  ```npm i```
+
+In ```/client``` add ```env.ts``` and write the cloudanry key you got from cloudinary.com:
 ```
 export const CLOUDINARY_API='cloudanry_key';
 ```
@@ -42,7 +40,7 @@ Run local mongodb local server
 
 in root run ```docker-compose up```
 
-in client run ```npm start```
+In ```/client``` run ```npm start```
 
 **Intro**
 
@@ -54,7 +52,7 @@ If you are using github desktop, use [this procedure](https://stackoverflow.com/
 
 ----
 
-**Contributers**
+**Contributors**
 
 
 ***UX/UI***

@@ -1,78 +1,165 @@
-import React, {FC, useState, useEffect} from "react";
-import {useParams} from 'react-router-dom';
-import Tabs from 'components/Tabs'
-import './Question.scss';
-import {Link} from 'react-router-dom';
-import {Button} from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ShareIcon from '@mui/icons-material/Share';
+import React, { FC, useEffect, useState } from "react";
+import {
+  Redirect,
+  Route,
+  Switch,
+  useParams,
+  useRouteMatch,
+  useLocation,
+  Link,
+} from "react-router-dom";
+import Tabs from "components/Tabs";
 import "./Question.scss";
-import _ from 'lodash'
+import { Button } from "@mui/material";
+import SendIcon from "@mui/icons-material/Send";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ShareIcon from "@mui/icons-material/Share";
 
-import {useAppSelector, useAppDispatch} from "redux/hooks";
+// controlers
+import { uid, getLastParamsFromURL } from "utils/helpers";
+import { sendMessage, joinRoom, leaveRoom } from "utils/socket";
+// redux
+import { addMessage, Message } from "redux/reducers/chatReducer";
+import { questionById } from "redux/reducers/questionsReducers";
+import { User, userSelector } from "redux/reducers/userReducer";
+import { useAppSelector, useAppDispatch } from "redux/hooks";
 
-//redux
-import {allMessages, addMessage} from 'redux/reducers/chatReducer';
-import {questionById} from 'redux/reducers/questionsReducers'
-
-//components
+// components
 import Discussion from "./Discussion";
-import QuestionInfo from './Information'
-import {joinRoom, leaveRoom} from "utils/socket";
-
-export interface QuestionProps {
-    info?: any;
-}
+import QuestionInfo from "./Information";
+import Vote from "./Vote/Vote";
 
 interface QuestionParams {
-    questionId: string
+  questionId: string;
 }
 
-const Question: FC<QuestionProps> = (props: QuestionProps) => {
+const Question: FC = () => {
+  const params = useParams<QuestionParams>();
+  const location = useLocation();
+  const { path, url } = useRouteMatch();
+  const user: User = useAppSelector(userSelector);
+  const [subLocation, setSubLocation] = useState<string | boolean>("");
 
-    const params = useParams<QuestionParams>();
-    console.log(params)
-    let questionId = '';
-    if ('questionId' in params) {
-        questionId = params.questionId
+  let questionId = "";
+  if ("questionId" in params) {
+    questionId = params.questionId;
+  }
+
+  const dispatch = useAppDispatch();
+  const question = useAppSelector(questionById(questionId));
+
+  useEffect(() => {
+    joinRoom(questionId, (messageObj: any) => {
+      dispatch(addMessage(messageObj));
+    });
+
+    return () => {
+      leaveRoom(questionId);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (getLastParamsFromURL(location) === "discussion") {
+      setSubLocation("discussion");
+    } else {
+      setSubLocation(false);
     }
+  }, [location]);
 
-    const dispatch = useAppDispatch();
-    const question = useAppSelector(questionById(questionId))
-    const messages = useAppSelector(allMessages).filter(msg => msg.parentId === questionId);
+  const imageUrl = question.image?.secure_url;
 
-    useEffect(() => {
-        joinRoom(questionId, (messageObj: any) => {
-            console.log('message received', messageObj.text)
-            dispatch(addMessage(messageObj))
-        })
-        console.log('joined room', questionId)
-        return () => {
-            leaveRoom(questionId)
-            console.log('left room', questionId)
-        }
-    }, [])
+  const formatMessage = (message: string): Message | null => {
+    try {
+      return {
+        // messageId,
+        id: uid(),
+        text: message,
+        creatorId: user.id,
+        creatorDisplayName: user.displayName,
+        parentId: questionId,
+        parentType: "question",
+        error: false,
+      };
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  };
 
-    const imageUrl = question.image?.secure_url
+  const handleSendMessage = (ev: any) => {
+    ev.preventDefault();
+    const message: string = ev.target.elements.message.value;
 
-    return (
-        <div className="page page-question">
-            <div className="question-header" style={{backgroundImage: imageUrl ? `url(${imageUrl}` : 'none'}}>
-                <div className="share-button"><ShareIcon/></div>
-            </div>
-            <Tabs id="questions" tabs={[
-                {title: "Solutions", component: () => (<QuestionInfo question={question}/>)},
-                {title: "Discussion", component: () => (<Discussion questionId={questionId} messages={messages}/>)},
-                {title: "Vote", component: () => (<div><h2>Vote</h2></div>)},
-            ]}/>
-            <div className="bottom-nav">
-                <Link to="/questions" style={{textDecoration: 'none'}}>
-                    <Button>
-                        <ArrowBackIcon/>
-                    </Button>
-                </Link>
-            </div>
+    if (message) {
+      const msg = formatMessage(message);
+      if (msg) {
+        dispatch(addMessage(msg));
+        sendMessage(msg);
+        // tempMessageId = msg.id;
+      }
+    }
+  };
+
+  return (
+    <div className="page page-question">
+      <div
+        className="question-header"
+        style={{ backgroundImage: imageUrl ? `url(${imageUrl}` : "none" }}>
+        <div className="share-button">
+          <ShareIcon />
         </div>
-    );
+      </div>
+      <Tabs
+        id="questions"
+        isMenu
+        tabs={[
+          { title: "Solutions", link: `${url}` },
+          { title: "Discussion", link: `${url}/discussion` },
+          { title: "Vote", link: `${url}/vote` },
+        ]}
+      />
+      <div className="internal-page">
+        <Switch>
+          <Route path={`${path}/discussion`}>
+            <Discussion questionId={questionId} />
+          </Route>
+          <Route path={`${path}/vote`}>
+            <Vote question={question} />
+          </Route>
+          <Route path={`${path}/info`}>
+            <QuestionInfo question={question} />
+          </Route>
+          <Redirect to={`${path}/info`} />
+        </Switch>
+      </div>
+      <div className="bottom-bar">
+        {subLocation === "discussion" ? (
+          <form onSubmit={handleSendMessage} className="bottom-bar__input">
+            <input
+              type="text"
+              name="message"
+              autoComplete="off"
+              placeholder="add message"
+            />
+            <button type="submit">
+              <SendIcon />
+            </button>
+          </form>
+        ) : null}
+        <div
+          className="bottom-nav"
+          style={{
+            boxShadow:
+              subLocation === "discussion" ? "none" : "0 12px 8px 10px grey",
+          }}>
+          <Link to="/questions" style={{ textDecoration: "none" }}>
+            <Button>
+              <ArrowBackIcon />
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 };
 export default Question;
