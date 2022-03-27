@@ -31,25 +31,24 @@ const Message = (props: MessageProps) => {
     const secondsNow = Math.floor(recentTimeTimestamp / 1000)
 
     const difference = secondsNow - secondsOld
-    let output = ''
 
     if (difference < 60) {
-      return output = `${difference} seconds ago`
+      return `${difference} seconds ago`
     } if (difference < 3600) {
       // Less than an hour has passed:
-      return output = `${Math.floor(difference / 60)} minutes ago`;
+      return `${Math.floor(difference / 60)} minutes ago`;
     } if (difference < 86400) {
       // Less than a day has passed:
-      return output = `${Math.floor(difference / 3600)} hours ago`;
+      return `${Math.floor(difference / 3600)} hours ago`;
     } if (difference < 2620800) {
       // Less than a month has passed:
-      return output = `${Math.floor(difference / 86400)} days ago`;
+      return `${Math.floor(difference / 86400)} days ago`;
     } if (difference < 31449600) {
       // Less than a year has passed:
-      return output = `${Math.floor(difference / 2620800)} months ago`;
+      return `${Math.floor(difference / 2620800)} months ago`;
     }
     // More than a year has passed:
-    return output = `${Math.floor(difference / 31449600)} years ago`;
+    return `${Math.floor(difference / 31449600)} years ago`;
   }
 
   try {
